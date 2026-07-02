@@ -1,62 +1,54 @@
-# Keccak 5/6-Round Collision Reproduction
+# Keccak 5/6 轮碰撞攻击复现
 
-This repository contains a reproduction-oriented implementation for the
-Keccak collision attacks developed in:
+这个仓库用于复现和推进 Song、Liao、Guo 等人关于轮数削减版 Keccak/SHA-3 碰撞攻击的工作。
+
+对应论文：
 
 - Ling Song, Guohong Liao, Jian Guo,
   **"Non-full Sbox Linearization: Applications to Collision Attacks on
-  Round-Reduced Keccak"**, CRYPTO 2017.
+  Round-Reduced Keccak"**,
+  CRYPTO 2017.
 - Jian Guo, Guohong Liao, Guozhen Liu, Meicheng Liu, Kexin Qiao, Ling Song,
   **"Practical Collision Attacks against Round-Reduced SHA-3"**,
   Journal of Cryptology 2020.
 
-The code is forked from a completed reproduction of Qiao et al.'s 2017
-two-round connector attack. It extends that baseline toward the CRYPTO 2017 /
-J. Cryptol 6-round Keccak challenge attack using non-full S-box linearization.
+这个仓库从已完成的 5 轮 `Keccak[1440,160,5,160]` 复现代码发展而来，进一步加入了面向 6 轮 Keccak challenge 实例的 non-full S-box linearization 和三轮 connector 复现路径。
 
-## Current Status
+## 当前状态
 
-Implemented and checked locally:
+已经实现并本地检查的内容：
 
-- Keccak-f[1600] round implementation and state/digest helpers.
-- Keccak 5-bit chi S-box, DDT, affine subspace enumeration, and the
-  linearization observations used by the connector papers.
-- The completed 5-round baseline for `Keccak[1440,160,5,160]`:
-  - Table 7 trail core No. 2 validation;
-  - two-round connector reproduction;
-  - C++/CUDA post-connector search tooling;
-  - saved collision candidates in `results/core2_cuda_candidates.txt`;
-  - independent Python verification of those candidates.
-- The 6-round `Keccak[1440,160,6,160]` staged reproduction:
-  - the printed Table 18 collision from the journal paper verifies under the
-    local Keccak implementation;
-  - Table 11 trail core No. 5 is transcribed and partially validated;
-  - a paper-derived first two-round connector is reconstructed from the printed
-    collision path;
-  - a conservative third-round connector and a bitwise non-full third-round
-    connector are constructed;
-  - direct Python samples verify `R^3(M1) xor R^3(M2) = alpha3`;
-  - C++/CUDA search data for the 3-round connector can be exported.
+- Keccak-f[1600] 轮函数和 digest 辅助函数。
+- Keccak 5-bit `chi` S-box、DDT、仿射子空间枚举，以及 connector 论文使用的线性化性质。
+- 已完成的 5 轮 baseline：`Keccak[1440,160,5,160]`
+  - Table 7 trail core No. 2 验证；
+  - 二轮 connector 复现；
+  - C++/CUDA 后续搜索工具；
+  - 保存的碰撞候选：`results/core2_cuda_candidates.txt`；
+  - Python 独立验证这些候选。
+- 6 轮 `Keccak[1440,160,6,160]` 的 staged reproduction：
+  - Journal 版本 Table 18 打印的 6 轮碰撞可被本地 Keccak 实现验证；
+  - Table 11 trail core No. 5 已转录并部分验证；
+  - 使用论文打印碰撞路径导出一个成功的 first two-round connector；
+  - 构造了 conservative third-round connector 和 bitwise non-full third-round connector；
+  - Python 直接抽样验证 `R^3(M1) xor R^3(M2) = alpha3`；
+  - 可以导出三轮 connector 的 C++/CUDA 搜索数据。
 
-Not completed yet:
+尚未完成的内容：
 
-- A long CUDA search for a newly found 6-round collision has not been run from
-  this checkout.
-- The `beta5` transcription in `trail_data_6round.py` is marked provisional and
-  is not used by the connector code.
-- The current 6-round route uses the paper's printed collision to derive a
-  successful connector path. It is not yet a full independent re-search of all
-  connector choices from scratch.
+- 还没有从这个 checkout 上运行长时间 CUDA 搜索来独立找到新的 6 轮碰撞。
+- `trail_data_6round.py` 中的 `beta5` 转录被标记为 provisional，当前 connector 代码不会使用它。
+- 当前 6 轮路径使用论文打印碰撞来导出成功 connector 路径，还不是从零独立搜索所有 connector 选择。
 
-## Quick Checks
+## 快速检查
 
-Run the baseline Python checks:
+运行 5 轮 baseline 的 Python 自检：
 
 ```bash
 python run_all.py
 ```
 
-Expected highlights:
+预期关键输出：
 
 ```text
 2-dimensional linearizable affine subspaces: 80
@@ -67,34 +59,34 @@ dimension: 180
 verifies R^2(M1)+R^2(M2)=alpha2: True
 ```
 
-Verify saved 5-round candidates:
+验证保存的 5 轮候选：
 
 ```bash
 python verify_core2_candidates.py results/core2_cuda_candidates.txt
 ```
 
-Expected result: all candidates print `ok=True`.
+预期结果：所有 candidate 都输出 `ok=True`。
 
-Verify the printed 6-round collision from the paper:
+验证论文打印的 6 轮碰撞：
 
 ```bash
 python verify_paper_6round_collision.py
 ```
 
-Expected highlights:
+预期关键输出：
 
 ```text
 collision: True
 matches printed digest: True
 ```
 
-Check the 6-round trail transcription:
+检查 6 轮 trail 转录：
 
 ```bash
 python trail_data_6round.py
 ```
 
-Expected highlights:
+预期关键输出：
 
 ```text
 table11_core5_keccak_1440_160_6_160
@@ -105,16 +97,15 @@ beta3->alpha4 weight=18: True
 beta5 transcription is provisional and is not used yet
 ```
 
-## Reproducing the 6-Round Connector Path
+## 复现 6 轮 Connector 路径
 
-Construct the paper-derived first two-round connector and the third-round
-non-full connector:
+构造 paper-derived first two-round connector 和第三轮 non-full connector：
 
 ```bash
 python derive_paper_first_two_connector.py --build-third
 ```
 
-Expected highlights:
+预期关键输出：
 
 ```text
 paper-derived first 2-round connector
@@ -128,36 +119,35 @@ paper-derived bitwise third-round connector
   sample verifies R^3 target: True
 ```
 
-Export native search data:
+导出原生搜索数据：
 
 ```bash
 python export_core3_cpp_data.py
 ```
 
-Expected highlights:
+预期关键输出：
 
 ```text
 basis size: 56
 connector rank/dimension: 1544/56
 ```
 
-The script `reproduce_core3_connector.py` is a staged overview entry point. It
-prints the expected long-search scale and validates the available trail data:
+`reproduce_core3_connector.py` 是 staged overview 入口，会打印预估搜索规模并验证当前可用 trail 数据：
 
 ```bash
 python reproduce_core3_connector.py
 ```
 
-## Native Search
+## 原生搜索
 
-Build the CPU and CUDA samplers on a Linux server:
+在 Linux 服务器上构建 CPU 和 CUDA 搜索程序：
 
 ```bash
 make core3-search
 make core3-search-cuda
 ```
 
-Small CPU calibration:
+CPU 小规模校准：
 
 ```bash
 ./core3_trail_search \
@@ -166,7 +156,7 @@ Small CPU calibration:
   --report 2000000
 ```
 
-CUDA calibration on all GPUs:
+多 GPU CUDA 校准：
 
 ```bash
 ./core3_trail_search_cuda \
@@ -177,8 +167,7 @@ CUDA calibration on all GPUs:
   --blocks-per-sm 4
 ```
 
-Long searches should be run in resumable chunks and append candidates to a
-result file, for example:
+长搜索建议分块运行，并把候选追加到结果文件：
 
 ```bash
 ./core3_trail_search_cuda \
@@ -191,57 +180,53 @@ result file, for example:
   --candidate-file results/core3_cuda_candidates.txt
 ```
 
-Planning numbers from the staged script:
+当前计划数字：
 
 ```text
 expected 2^47.81 at 1e9/s: about 68.5 hours
 paper actual 2^49.07 at 1e9/s: about 164.2 hours
 ```
 
-These are probability estimates, not guarantees.
+这些是概率估计，不是确定倒计时。
 
-## Project Layout
+## 项目结构
 
-Core modules:
+核心模块：
 
-- `keccak_state.py`: Keccak-f[1600] execution and digest helpers.
-- `sbox_linearization.py`: chi S-box, DDT, and affine linearization checks.
-- `sbox_constraints.py`: local S-box transition equations and linear models.
-- `gf2.py`: GF(2) linear equation system.
-- `linear_layer.py`: Keccak linear layer and inverse matrix helpers.
-- `state_lift.py`: maps local S-box equations to 1600-bit state coordinates.
-- `connector_equations.py`: full-linearized two-round connector equations.
-- `incremental_connector.py`: incremental connector construction primitives.
-- `core2_connector.py`: completed 5-round baseline connector.
-- `core3_connector.py`: paper-derived and bitwise non-full 6-round connector
-  helpers.
+- `keccak_state.py`：Keccak-f[1600] 执行与 digest 辅助函数。
+- `sbox_linearization.py`：`chi` S-box、DDT 和仿射线性化检查。
+- `sbox_constraints.py`：局部 S-box 转移方程和线性模型。
+- `gf2.py`：GF(2) 线性方程系统。
+- `linear_layer.py`：Keccak 线性层和逆矩阵辅助函数。
+- `state_lift.py`：将局部 S-box 方程提升到 1600-bit 状态坐标。
+- `connector_equations.py`：full-linearized 二轮 connector 方程。
+- `incremental_connector.py`：增量式 connector 构造工具。
+- `core2_connector.py`：已完成的 5 轮 baseline connector。
+- `core3_connector.py`：paper-derived 与 bitwise non-full 6 轮 connector 辅助函数。
 
-Trail and verification data:
+Trail 与验证数据：
 
-- `trail_data.py`: Table 7 core No. 2 for the completed 5-round baseline.
-- `trail_data_6round.py`: Table 11 core No. 5 for the 6-round target.
-- `paper_collisions.py`: printed collision data helpers.
-- `verify_paper_6round_collision.py`: verifies the printed 6-round collision.
-- `verify_core2_candidates.py`: verifies saved 5-round candidates.
+- `trail_data.py`：5 轮 baseline 的 Table 7 core No. 2。
+- `trail_data_6round.py`：6 轮目标的 Table 11 core No. 5。
+- `paper_collisions.py`：论文打印碰撞数据辅助函数。
+- `verify_paper_6round_collision.py`：验证论文打印的 6 轮碰撞。
+- `verify_core2_candidates.py`：验证保存的 5 轮候选。
 
-Main reproduction scripts:
+主要复现脚本：
 
-- `run_all.py`: baseline Python self-checks.
-- `reproduce_core2_connector.py`: deterministic 5-round baseline connector.
-- `derive_paper_first_two_connector.py`: derives the 6-round first two-round
-  connector and builds the third-round non-full connector.
-- `reproduce_core3_connector.py`: staged 6-round overview and trail check.
-- `export_core3_cpp_data.py`: exports the 3-round connector for native search.
+- `run_all.py`：baseline Python 自检。
+- `reproduce_core2_connector.py`：确定性复现 5 轮 baseline connector。
+- `derive_paper_first_two_connector.py`：导出 6 轮 first two-round connector 并构造第三轮 non-full connector。
+- `reproduce_core3_connector.py`：6 轮 staged overview 和 trail 检查。
+- `export_core3_cpp_data.py`：导出三轮 connector 供原生搜索使用。
 
-Native search:
+原生搜索：
 
-- `core2_trail_search.cpp`, `core2_trail_search_cuda.cu`: completed 5-round
-  post-connector samplers.
-- `core3_trail_search.cpp`, `core3_trail_search_cuda.cu`: 6-round
-  post-connector samplers.
-- `Makefile`: build targets.
+- `core2_trail_search.cpp`、`core2_trail_search_cuda.cu`：已完成 5 轮后续搜索。
+- `core3_trail_search.cpp`、`core3_trail_search_cuda.cu`：6 轮后续搜索。
+- `Makefile`：构建入口。
 
-Exploratory scripts:
+探索脚本：
 
 - `search_core3_beta_pairs.py`
 - `search_core3_first_two_parallel.py`
@@ -251,14 +236,11 @@ Exploratory scripts:
 - `search_core3_with_beta_pair.py`
 - `repair_core3_with_beta_pair.py`
 
-These are kept to document the route taken before switching to the
-paper-derived connector path.
+这些脚本保留用于记录切换到 paper-derived connector 路径之前的探索过程。
 
-## Notes
+## 说明
 
-- This repository is for reduced-round cryptanalysis research and reproduction.
-  It does not affect the security of full 24-round SHA-3.
-- Generated matrix caches, compiled binaries, exported native headers, and
-  long-search logs are ignored by `.gitignore`.
-- `README_6ROUND_PLAN.md` contains a more detailed development log for the
-  6-round work.
+- 本仓库用于 reduced-round cryptanalysis 学习与复现。
+- 完整 24 轮 SHA-3 不受影响。
+- 6 轮部分目前是 staged reproduction 和长搜索入口，长时间 CUDA 搜索可以后续在服务器上继续运行。
+- `README_6ROUND_PLAN.md` 记录了更详细的 6 轮开发过程。
