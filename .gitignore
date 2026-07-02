@@ -1,0 +1,29 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+*.pkl
+*.o
+*.so
+
+# Generated build/search artifacts.
+core2_trail_search
+core2_trail_search_cuda
+core2_search_data.hpp
+core3_trail_search
+core3_trail_search_cuda
+core3_search_data.hpp
+_linear_layer_cache.pkl
+
+# OCR/cropping intermediates. The final reproduced collisions are kept in
+# results/core2_cuda_candidates.txt.
+reference/
+results/*.tmp
+results/*.jsonl
+results/pages/
+results/pages_collision_1_2/
+results/crops/
+results/table10_zoom.png
+results/page_239_pymupdf.txt
